@@ -1,3 +1,4 @@
+import { getToken } from '@/utils/auth';
 import { useBatteryLevel } from 'expo-battery';
 import React from 'react';
 import { Alert, Button, StyleSheet, Text, View } from 'react-native';
@@ -14,9 +15,18 @@ export default function SendScreen() {
     }
 
     try {
+      const token = await getToken();
+      if (!token) {
+        Alert.alert('Error', 'You are not authenticated.');
+        return;
+      }
+
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           level: batteryLevel,
           timestamp: new Date().toISOString(),
@@ -30,11 +40,11 @@ export default function SendScreen() {
 
       Alert.alert('Success', 'Battery data sent!');
     } catch (error) {
-        console.error('POST Error:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        Alert.alert('Error', message);
-      }
-  }
+      console.error('POST Error:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Error', message);
+    }
+  };
 
   return (
     <View style={styles.container}>

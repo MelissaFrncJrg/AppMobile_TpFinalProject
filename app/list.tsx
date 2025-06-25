@@ -1,5 +1,7 @@
+import { getToken } from '@/utils/auth';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 
 const API_URL = 'https://685baa6a89952852c2da720a.mockapi.io/api/battery';
 
@@ -12,15 +14,34 @@ type BatteryEntry = {
 export default function ListScreen() {
   const [data, setData] = useState<BatteryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchBatteryData = async () => {
       try {
-        const res = await fetch(API_URL);
-        const json = await res.json();
+        const token = await getToken();
+
+        if (!token) {
+          router.replace('/login');
+          return;
+        }
+
+        const response = await fetch(API_URL, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+
+        const json = await response.json();
         setData(json);
       } catch (e) {
         console.error('Error fetching battery data', e);
+        Alert.alert('Error', 'Unable to fetch data.');
       } finally {
         setLoading(false);
       }
@@ -56,12 +77,17 @@ export default function ListScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, padding: 20, marginTop: 50,
+    flex: 1,
+    padding: 20,
+    marginTop: 50,
   },
   title: {
-    fontSize: 22, marginBottom: 20, fontWeight: 'bold',
+    fontSize: 22,
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
   item: {
-    fontSize: 18, marginVertical: 5,
+    fontSize: 18,
+    marginVertical: 5,
   },
 });
